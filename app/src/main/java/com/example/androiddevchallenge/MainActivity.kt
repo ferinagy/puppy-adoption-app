@@ -18,12 +18,21 @@ package com.example.androiddevchallenge
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.navArgument
+import androidx.navigation.compose.rememberNavController
 import com.example.androiddevchallenge.ui.theme.MyTheme
+
+data class Dog(
+    val id: String,
+    val name: String,
+    val pictureUrl: String,
+    val shortDescription: String
+)
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,8 +48,19 @@ class MainActivity : AppCompatActivity() {
 // Start building your app here!
 @Composable
 fun MyApp() {
-    Surface(color = MaterialTheme.colors.background) {
-        Text(text = "Ready... Set... GO!")
+    val dogs = demoData
+
+    val navController = rememberNavController()
+    NavHost(navController, startDestination = "puppy_list") {
+        composable("puppy_list") { DogListScreen(dogs, navController) }
+        composable(
+            "puppy_detail/{puppyId}",
+            arguments = listOf(navArgument("puppyId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val id = requireNotNull(backStackEntry.arguments?.getString("puppyId"))
+            val dog = dogs.first { it.id == id }
+            DogDetailScreen(navController, dog)
+        }
     }
 }
 

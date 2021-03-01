@@ -45,6 +45,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.transform.CircleCropTransformation
 import com.example.androiddevchallenge.network.AnimalDTO
+import com.example.androiddevchallenge.network.escapeDescription
 import com.example.androiddevchallenge.ui.theme.MyTheme
 import dev.chrisbanes.accompanist.coil.CoilImage
 
@@ -217,7 +218,7 @@ fun TextContentContent(
 
         Text(
             modifier = Modifier.padding(end = 8.dp),
-            text = dog.description ?: "No description given",
+            text = dog.escapeDescription().ifEmpty { "No description given" },
             style = MaterialTheme.typography.body1
         )
     }

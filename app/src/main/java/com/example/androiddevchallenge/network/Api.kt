@@ -27,6 +27,24 @@ data class AnimalDTO(
     val photos: List<PhotosDTO>
 )
 
+fun AnimalDTO.escapeDescription(): String {
+    fun String.escape() = replace("&amp;", "&")
+        .replace("&#39;", "'")
+        .replace("&#039;", "'")
+        .replace("&#34;", "\"")
+        .replace("&quot;", "\"")
+
+    var result = description.orEmpty()
+    var escaped = result.escape()
+
+    while (result != escaped) {
+        result = escaped
+        escaped = result.escape()
+    }
+
+    return result
+}
+
 data class PhotosDTO(val small: String, val medium: String, val large: String, val full: String)
 
 interface PetFinderService {

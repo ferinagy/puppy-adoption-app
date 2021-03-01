@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.androiddevchallenge.network.AnimalDTO
+import com.example.androiddevchallenge.network.escapeDescription
 import com.example.androiddevchallenge.ui.theme.MyTheme
 import dev.chrisbanes.accompanist.coil.CoilImage
 import dev.chrisbanes.accompanist.insets.statusBarsPadding
@@ -99,7 +100,7 @@ fun DetailcreenDarkPreview() {
             HeaderInfo(dog)
             Text(
                 modifier = Modifier.padding(all = 8.dp),
-                text = dog.description ?: "No description given, check out the adoption site anyway?",
+                text = dog.escapeDescription().ifEmpty { "No description given, check out the adoption site anyway?" },
                 style = MaterialTheme.typography.body1
             )
             Text("# of photos: ${dog.photos.size}")

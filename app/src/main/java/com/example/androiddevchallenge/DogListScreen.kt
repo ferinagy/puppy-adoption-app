@@ -197,7 +197,6 @@ private fun PuppyListToolbar(filterFavorites: Boolean, favoritesToggled: () -> U
             )
         }
     }
-
 }
 
 @Composable

@@ -24,7 +24,10 @@ data class AnimalDTO(
     val name: String,
     val url: String,
     val description: String?,
-    val photos: List<PhotosDTO>
+    val photos: List<PhotosDTO>,
+    val attributes: Map<String, Boolean?>,
+    val environment: Map<String, Boolean?>,
+    val tags: List<String>
 )
 
 fun AnimalDTO.escapeDescription(): String {
@@ -44,6 +47,22 @@ fun AnimalDTO.escapeDescription(): String {
 
     return result
 }
+
+@OptIn(ExperimentalStdlibApi::class)
+fun AnimalDTO.tagSet(): List<String> = buildSet {
+    val attrs = attributes.filter { it.value == true }.keys.map {
+        when (it) {
+            "spayed_neutered" -> "Spayed/Neutered"
+            "house_trained" -> "House trained"
+            "declawed" -> "Declawed"
+            "special_needs" -> "Special needs"
+            "shots_current" -> "Shots current"
+            else -> TODO()
+        }
+    }
+    addAll(attrs)
+    addAll(tags)
+}.take(3)
 
 data class PhotosDTO(val small: String, val medium: String, val large: String, val full: String)
 
@@ -84,7 +103,10 @@ class PetFinderRepo {
         try {
             val token = service.getNewToken()
             val response = service.getAnimals(auth = "Bearer ${token.access_token}")
-            Log.d("FERI", "curl -H \"Authorization: Bearer ${token.access_token}\" https://api.petfinder.com/v2/animals")
+            Log.d(
+                "FERI",
+                "curl -H \"Authorization: Bearer ${token.access_token}\" https://api.petfinder.com/v2/animals"
+            )
             emit(State.Data(response.animals))
         } catch (e: Throwable) {
             emit(State.Error)

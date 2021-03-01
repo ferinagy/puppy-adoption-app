@@ -31,7 +31,10 @@ val demoData = listOf(
                 large = "https://images.dog.ceo/breeds/poodle-standard/n02113799_983.jpg",
                 full = "https://images.dog.ceo/breeds/poodle-standard/n02113799_983.jpg",
             )
-        )
+        ),
+        attributes = emptyMap(),
+        environment = emptyMap(),
+        tags = listOf("Tag1", "Tag2")
     ),
     AnimalDTO(
         id = "2",
@@ -45,7 +48,10 @@ val demoData = listOf(
                 large = "https://images.dog.ceo/breeds/poodle-standard/n02113799_983.jpg",
                 full = "https://images.dog.ceo/breeds/poodle-standard/n02113799_983.jpg",
             )
-        )
+        ),
+        attributes = emptyMap(),
+        environment = emptyMap(),
+        tags = listOf("Tag1", "Tag2")
     ),
     AnimalDTO(
         id = "3",
@@ -59,6 +65,9 @@ val demoData = listOf(
                 large = "https://images.dog.ceo/breeds/poodle-standard/n02113799_983.jpg",
                 full = "https://images.dog.ceo/breeds/poodle-standard/n02113799_983.jpg",
             )
-        )
+        ),
+        attributes = emptyMap(),
+        environment = emptyMap(),
+        tags = listOf("Tag1", "Tag2")
     ),
 )

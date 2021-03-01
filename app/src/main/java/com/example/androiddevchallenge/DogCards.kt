@@ -15,7 +15,10 @@
  */
 package com.example.androiddevchallenge
 
+import android.util.Log
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -23,6 +26,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -31,6 +35,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
+import androidx.compose.material.LocalContentColor
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
@@ -38,6 +43,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -46,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import coil.transform.CircleCropTransformation
 import com.example.androiddevchallenge.network.AnimalDTO
 import com.example.androiddevchallenge.network.escapeDescription
+import com.example.androiddevchallenge.network.tagSet
 import com.example.androiddevchallenge.ui.theme.MyTheme
 import dev.chrisbanes.accompanist.coil.CoilImage
 
@@ -65,14 +72,6 @@ fun DarkCard() {
     }
 }
 
-@Preview("Light Card - Square Image", widthDp = 360, heightDp = 240)
-@Composable
-fun LightCard2() {
-    MyTheme {
-        DogCardSquare(demoData[0], false) {}
-    }
-}
-
 @Preview("Dog Card - Stretched Image", widthDp = 360, heightDp = 240)
 @Composable
 fun LightCard3() {
@@ -81,6 +80,7 @@ fun LightCard3() {
     }
 }
 
+@OptIn(ExperimentalStdlibApi::class)
 @Composable
 fun DogCardRound(
     dog: AnimalDTO,
@@ -88,68 +88,46 @@ fun DogCardRound(
     modifier: Modifier = Modifier,
     onFavoriteClicked: (AnimalDTO) -> Unit
 ) {
-    Card(modifier = modifier, elevation = 2.dp) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp)
-        ) {
-            Box(Modifier.size(64.dp)) {
-                val image = dog.photos.firstOrNull()
-                if (image != null) {
-                    CoilImage(
-                        modifier = Modifier.matchParentSize(),
-                        data = image.small,
-                        fadeIn = true,
-                        contentDescription = "A picture of ${dog.name}",
-                        requestBuilder = {
-                            transformations(CircleCropTransformation())
-                        },
-                    )
-                } else {
-                    Surface(
-                        modifier = Modifier.matchParentSize(),
-                        shape = RoundedCornerShape(CornerSize(percent = 50)),
-                        color = MaterialTheme.colors.onSurface.copy(alpha = 0.2f)
-                    ) {}
+    Card(modifier = modifier, border = BorderStroke(width = 1.dp, MaterialTheme.colors.primary)) {
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp)
+            ) {
+                Box(
+                    Modifier
+                        .size(64.dp)
+                        .padding(start = 8.dp, top = 8.dp)
+                ) {
+                    val image = dog.photos.firstOrNull()
+                    if (image != null) {
+                        CoilImage(
+                            modifier = Modifier.matchParentSize(),
+                            data = image.small,
+                            fadeIn = true,
+                            contentDescription = "A picture of ${dog.name}",
+                            requestBuilder = {
+                                transformations(CircleCropTransformation())
+                            },
+                        )
+                    } else {
+                        Surface(
+                            modifier = Modifier.matchParentSize(),
+                            shape = RoundedCornerShape(CornerSize(percent = 50)),
+                            color = MaterialTheme.colors.onSurface.copy(alpha = 0.2f)
+                        ) {}
+                    }
                 }
+
+                TextContentContent(
+                    dog,
+                    isFavorite,
+                    Modifier.weight(1f),
+                    onFavoriteClicked
+                )
             }
-
-            TextContentContent(
-                dog,
-                isFavorite,
-                Modifier.weight(1f),
-                onFavoriteClicked
-            )
-        }
-    }
-}
-
-@Composable
-fun DogCardSquare(
-    dog: AnimalDTO,
-    isFavorite: Boolean,
-    modifier: Modifier = Modifier,
-    onFavoriteClicked: (AnimalDTO) -> Unit
-) {
-    Card(modifier = modifier, elevation = 2.dp) {
-        Row(modifier = Modifier.fillMaxWidth()) {
-            CoilImage(
-                modifier = Modifier.size(64.dp),
-                data = dog.photos.first().small,
-                fadeIn = true,
-                contentDescription = "A picture of ${dog.name}",
-                contentScale = ContentScale.Crop,
-                loading = {
-                    Box(modifier = Modifier.background(MaterialTheme.colors.onSurface.copy(alpha = 0.2f)))
-                }
-            )
-            TextContentContent(
-                dog,
-                isFavorite,
-                Modifier.weight(1f),
-                onFavoriteClicked
-            )
+            TagPanel(modifier = Modifier.fillMaxWidth(), tags = dog.tagSet())
         }
     }
 }
@@ -195,7 +173,7 @@ fun TextContentContent(
     modifier: Modifier = Modifier,
     onFavoriteClicked: (AnimalDTO) -> Unit
 ) {
-    Column(modifier.padding(start = 8.dp, bottom = 8.dp)) {
+    Column(modifier.padding(start = 8.dp)) {
         Row(modifier = Modifier.fillMaxWidth()) {
             Text(
                 modifier = Modifier
@@ -221,5 +199,25 @@ fun TextContentContent(
             text = dog.escapeDescription().ifEmpty { "No description given" },
             style = MaterialTheme.typography.body1
         )
+    }
+}
+
+@Composable
+fun TagPanel(modifier: Modifier, tags: List<String>) {
+    Surface(modifier = modifier, color = MaterialTheme.colors.primary) {
+        Row(
+            modifier = Modifier.padding(all = 8.dp).heightIn(min = 24.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, alignment = Alignment.End)
+        ) {
+            tags.forEach {
+                Surface(
+                    color = MaterialTheme.colors.primary,
+                    shape = MaterialTheme.shapes.small,
+                    border = BorderStroke(width = 1.dp, LocalContentColor.current)
+                ) {
+                    Text(modifier = Modifier.padding(horizontal = 4.dp), text = it)
+                }
+            }
+        }
     }
 }

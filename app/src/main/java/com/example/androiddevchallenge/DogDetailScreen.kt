@@ -56,6 +56,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.androiddevchallenge.network.AnimalDTO
 import com.example.androiddevchallenge.network.escapeDescription
+import com.example.androiddevchallenge.network.tagSet
 import com.example.androiddevchallenge.ui.theme.MyTheme
 import dev.chrisbanes.accompanist.coil.CoilImage
 import dev.chrisbanes.accompanist.insets.statusBarsPadding
@@ -155,11 +156,13 @@ private fun HeaderInfo(dog: AnimalDTO) {
         Column(
             Modifier
                 .fillMaxWidth()
-                .padding(all = 8.dp)
+                .padding(top = 8.dp)
+                .padding(horizontal = 8.dp)
         ) {
             CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.high) {
                 Text(text = dog.name, style = MaterialTheme.typography.h4)
             }
+            TagPanel(modifier = Modifier.fillMaxWidth(), tags = dog.tagSet())
         }
     }
 }

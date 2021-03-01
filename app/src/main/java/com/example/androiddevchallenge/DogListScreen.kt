@@ -21,14 +21,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.AppBarDefaults
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
@@ -53,7 +50,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -62,10 +58,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.androiddevchallenge.network.AnimalDTO
 import com.example.androiddevchallenge.network.PetFinderRepo
 import com.example.androiddevchallenge.ui.theme.MyTheme
-import dev.chrisbanes.accompanist.insets.LocalWindowInsets
 import dev.chrisbanes.accompanist.insets.statusBarsHeight
-import dev.chrisbanes.accompanist.insets.statusBarsPadding
-import dev.chrisbanes.accompanist.insets.toPaddingValues
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -191,7 +184,7 @@ private fun PuppyListToolbar(filterFavorites: Boolean, favoritesToggled: () -> U
             )
             TopAppBar(
                 elevation = 0.dp,
-                title = { Text(text = "Puppy adopter") },
+                title = { Text(text = "DoptAPup") },
                 actions = {
                     IconButton(onClick = searchClicked) {
                         Icon(imageVector = Icons.Filled.Search, contentDescription = "Search")

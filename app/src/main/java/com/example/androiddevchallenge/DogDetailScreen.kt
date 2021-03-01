@@ -22,11 +22,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.ContentAlpha
 import androidx.compose.material.ExtendedFloatingActionButton
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.LocalContentAlpha
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Surface
@@ -96,15 +98,24 @@ fun DetailcreenDarkPreview() {
             ExtendedFloatingActionButton(text = { Text(text = "Adopt ${dog.name}") }, onClick = { onFabClicked(dog) })
         }
     ) {
-        Column {
-            HeaderImage(dog)
-            HeaderInfo(dog)
-            Text(
-                modifier = Modifier.padding(all = 8.dp),
-                text = dog.escapeDescription().ifEmpty { "No description given, check out the adoption site anyway?" },
-                style = MaterialTheme.typography.body1
-            )
-            Text("# of photos: ${dog.photos.size}")
+        LazyColumn {
+            item { HeaderImage(dog) }
+            item { HeaderInfo(dog) }
+            item {
+                Text(
+                    modifier = Modifier.padding(all = 8.dp),
+                    text = dog.escapeDescription()
+                        .ifEmpty { "No description given, check out the adoption site anyway?" },
+                    style = MaterialTheme.typography.body1
+                )
+            }
+            items(dog.photos.asReversed()) {
+                CoilImage(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    data = it.full,
+                    contentDescription = "Image of ${dog.name}",
+                )
+            }
         }
 
         PuppyDetailToolbar(navController, dog, favorites)
@@ -179,7 +190,7 @@ private fun HeaderImage(dog: AnimalDTO) {
         if (image != null) {
             CoilImage(
                 modifier = Modifier.matchParentSize(),
-                data = image.large,
+                data = image.full,
                 contentDescription = "Header image of ${dog.name}",
                 contentScale = ContentScale.Crop,
                 alignment = Alignment.TopCenter

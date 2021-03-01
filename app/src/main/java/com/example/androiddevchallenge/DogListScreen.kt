@@ -15,126 +15,192 @@
  */
 package com.example.androiddevchallenge
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.AppBarDefaults
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
+import androidx.compose.material.ScaffoldState
 import androidx.compose.material.SnackbarResult
+import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.primarySurface
 import androidx.compose.material.rememberScaffoldState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.navigate
 import androidx.navigation.compose.rememberNavController
+import com.example.androiddevchallenge.network.AnimalDTO
+import com.example.androiddevchallenge.network.PetFinderRepo
 import com.example.androiddevchallenge.ui.theme.MyTheme
+import dev.chrisbanes.accompanist.insets.LocalWindowInsets
+import dev.chrisbanes.accompanist.insets.statusBarsHeight
+import dev.chrisbanes.accompanist.insets.statusBarsPadding
+import dev.chrisbanes.accompanist.insets.toPaddingValues
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-@Composable fun DogListScreen(dogs: List<Dog>, navController: NavHostController) {
-    var favorites by remember { mutableStateOf(emptySet<Dog>()) }
-    var filterFavorites by remember { mutableStateOf(false) }
+@Composable fun DogListScreen(
+    navController: NavHostController,
+    listState: State<PetFinderRepo.State>,
+    favorites: MutableState<Set<String>>
+) {
+    val filterFavorites = remember { mutableStateOf(false) }
     val scaffoldState = rememberScaffoldState()
     val scope = rememberCoroutineScope()
-
-    fun toolbarToggleClicked() {
-        val newValue = !filterFavorites
-
-        if (newValue && favorites.isEmpty()) {
-            scope.launch {
-                scaffoldState.snackbarHostState.showSnackbar("You have no favorites yet")
-            }
-        } else {
-            filterFavorites = newValue
-        }
-    }
-
-    fun searchClicked() {
-        scope.launch {
-            scaffoldState.snackbarHostState.showSnackbar("Search not implemented yet <Sad puppy eyes>")
-        }
-    }
-
-    fun onFavoriteItemClicked(it: Dog) {
-        favorites = if (it in favorites) {
-            if (filterFavorites) {
-                scope.launch {
-                    val result = scaffoldState.snackbarHostState.showSnackbar(
-                        message = "${it.name} was removed from favorites",
-                        actionLabel = "Undo",
-                    )
-                    if (result == SnackbarResult.ActionPerformed) {
-                        favorites = favorites + it
-                    }
-                }
-            }
-
-            favorites - it
-        } else {
-            favorites + it
-        }
-    }
 
     Scaffold(
         scaffoldState = scaffoldState,
         topBar = {
             PuppyListToolbar(
-                filterFavorites = filterFavorites,
-                favoritesToggled = ::toolbarToggleClicked,
-                searchClicked = ::searchClicked
+                filterFavorites = filterFavorites.value,
+                favoritesToggled = { toolbarToggleClicked(filterFavorites, favorites, scope, scaffoldState) },
+                searchClicked = { searchClicked(scope, scaffoldState) }
             )
         }
     ) {
-        val list = dogs.filter { !filterFavorites || it in favorites }
 
-        DogList(
-            list = list,
-            favorites = favorites,
-            onDogClicked = { navController.navigate("puppy_detail/${it.id}") },
-            onFavoriteClicked = ::onFavoriteItemClicked
-        )
+        when (val state = listState.value) {
+            PetFinderRepo.State.Loading -> Text("Loading")
+            PetFinderRepo.State.Error -> Text("Error")
+            is PetFinderRepo.State.Data -> {
+                MainContent(state, filterFavorites, favorites, navController, scope, scaffoldState)
+            }
+        }
+    }
+}
+
+@Composable
+private fun MainContent(
+    state: PetFinderRepo.State.Data,
+    filterFavorites: MutableState<Boolean>,
+    favorites: MutableState<Set<String>>,
+    navController: NavHostController,
+    scope: CoroutineScope,
+    scaffoldState: ScaffoldState
+) {
+    val animals = state.animals
+
+    val list = animals.filter { !filterFavorites.value || it.id in favorites.value }
+
+    DogList(
+        list = list,
+        favorites = favorites.value,
+        onDogClicked = { navController.navigate("puppy_detail/${it.id}") },
+        onFavoriteClicked = { onFavoriteItemClicked(it, favorites, filterFavorites, scope, scaffoldState) }
+    )
+}
+
+fun searchClicked(scope: CoroutineScope, scaffoldState: ScaffoldState) {
+    scope.launch {
+        scaffoldState.snackbarHostState.showSnackbar("Search not implemented yet <Sad puppy eyes>")
+    }
+}
+
+fun toolbarToggleClicked(
+    filterFavorites: MutableState<Boolean>,
+    favorites: State<Set<String>>,
+    scope: CoroutineScope,
+    scaffoldState: ScaffoldState
+) {
+    val newValue = !filterFavorites.value
+
+    if (newValue && favorites.value.isEmpty()) {
+        scope.launch {
+            scaffoldState.snackbarHostState.showSnackbar("You have no favorites yet")
+        }
+    } else {
+        filterFavorites.value = newValue
+    }
+}
+
+fun onFavoriteItemClicked(
+    animal: AnimalDTO,
+    favorites: MutableState<Set<String>>,
+    filterFavorites: State<Boolean>,
+    scope: CoroutineScope,
+    scaffoldState: ScaffoldState
+) {
+    favorites.value = if (animal.id in favorites.value) {
+        if (filterFavorites.value) {
+            scope.launch {
+                val result = scaffoldState.snackbarHostState.showSnackbar(
+                    message = "${animal.name} was removed from favorites",
+                    actionLabel = "Undo",
+                )
+                if (result == SnackbarResult.ActionPerformed) {
+                    favorites.value = favorites.value + animal.id
+                }
+            }
+        }
+
+        favorites.value - animal.id
+    } else {
+        favorites.value + animal.id
     }
 }
 
 @Composable
 private fun PuppyListToolbar(filterFavorites: Boolean, favoritesToggled: () -> Unit, searchClicked: () -> Unit) {
-    TopAppBar(
-        title = { Text(text = "Puppy adopter") },
-        actions = {
-            IconButton(onClick = searchClicked) {
-                Icon(imageVector = Icons.Filled.Search, contentDescription = "Search")
-            }
-            IconButton(onClick = favoritesToggled) {
-                val icon = if (filterFavorites) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder
-                Icon(imageVector = icon, contentDescription = "Toggle favorites")
-            }
+    Surface(elevation = 4.dp) {
+        Column {
+            Spacer(
+                modifier = Modifier
+                    .background(MaterialTheme.colors.primarySurface)
+                    .statusBarsHeight() // Match the height of the status bar
+                    .fillMaxWidth()
+            )
+            TopAppBar(
+                elevation = 0.dp,
+                title = { Text(text = "Puppy adopter") },
+                actions = {
+                    IconButton(onClick = searchClicked) {
+                        Icon(imageVector = Icons.Filled.Search, contentDescription = "Search")
+                    }
+                    IconButton(onClick = favoritesToggled) {
+                        val icon = if (filterFavorites) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder
+                        Icon(imageVector = icon, contentDescription = "Toggle favorites")
+                    }
+                }
+            )
         }
-    )
+    }
+
 }
 
 @Composable
 private fun DogList(
-    list: List<Dog>,
-    favorites: Set<Dog>,
-    onDogClicked: (Dog) -> Unit,
-    onFavoriteClicked: (Dog) -> Unit
+    list: List<AnimalDTO>,
+    favorites: Set<String>,
+    onDogClicked: (AnimalDTO) -> Unit,
+    onFavoriteClicked: (AnimalDTO) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -145,7 +211,7 @@ private fun DogList(
         items(list) { dog ->
             DogCardRound(
                 dog = dog,
-                isFavorite = dog in favorites,
+                isFavorite = dog.id in favorites,
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { onDogClicked(dog) },
@@ -159,8 +225,10 @@ private fun DogList(
 @Composable
 fun ListScreenLightPreview() {
     val navController = rememberNavController()
+    val state = mutableStateOf<PetFinderRepo.State>(PetFinderRepo.State.Data(demoData))
+    val favs = mutableStateOf(emptySet<String>())
     MyTheme {
-        DogListScreen(demoData, navController)
+        DogListScreen(navController, state, favs)
     }
 }
 
@@ -168,7 +236,9 @@ fun ListScreenLightPreview() {
 @Composable
 fun ListScreenDarkPreview() {
     val navController = rememberNavController()
+    val state = mutableStateOf<PetFinderRepo.State>(PetFinderRepo.State.Data(demoData))
+    val favs = mutableStateOf(emptySet<String>())
     MyTheme(darkTheme = true) {
-        DogListScreen(demoData, navController)
+        DogListScreen(navController, state, favs)
     }
 }

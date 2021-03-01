@@ -18,6 +18,7 @@ package com.example.androiddevchallenge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -35,9 +36,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.primarySurface
 import androidx.compose.material.rememberScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,23 +48,25 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.example.androiddevchallenge.network.AnimalDTO
 import com.example.androiddevchallenge.ui.theme.MyTheme
 import dev.chrisbanes.accompanist.coil.CoilImage
+import dev.chrisbanes.accompanist.insets.statusBarsPadding
 import kotlinx.coroutines.launch
 
 @Preview("Light Theme", widthDp = 360, heightDp = 640)
 @Composable
 fun DetailScreenLightPreview() {
     val navController = rememberNavController()
+    val favs = mutableStateOf(emptySet<String>())
     MyTheme {
-        DogDetailScreen(navController, demoData[0])
+        DogDetailScreen(navController, demoData[0], favs) {}
     }
 }
 
@@ -69,27 +74,24 @@ fun DetailScreenLightPreview() {
 @Composable
 fun DetailcreenDarkPreview() {
     val navController = rememberNavController()
+    val favs = mutableStateOf(emptySet<String>())
     MyTheme(darkTheme = true) {
-        DogDetailScreen(navController, demoData[0])
+        DogDetailScreen(navController, demoData[0], favs) {}
     }
 }
 
-@Composable fun DogDetailScreen(navController: NavHostController, dog: Dog) {
+@Composable fun DogDetailScreen(
+    navController: NavHostController,
+    dog: AnimalDTO,
+    favorites: MutableState<Set<String>>,
+    onFabClicked: (AnimalDTO) -> Unit
+) {
     val scaffoldState = rememberScaffoldState()
-    val scope = rememberCoroutineScope()
-
-    var isFavorite by remember { mutableStateOf(false) }
 
     Scaffold(
         scaffoldState = scaffoldState,
         floatingActionButton = {
-            ExtendedFloatingActionButton(text = { Text(text = "Adopt ${dog.name}") }, onClick = {
-                scope.launch {
-                    scaffoldState.snackbarHostState.showSnackbar(
-                        message = "Hooray! ${dog.name} is already wagging his/her tail."
-                    )
-                }
-            })
+            ExtendedFloatingActionButton(text = { Text(text = "Adopt ${dog.name}") }, onClick = { onFabClicked(dog) })
         }
     ) {
         Column {
@@ -97,11 +99,30 @@ fun DetailcreenDarkPreview() {
             HeaderInfo(dog)
             Text(
                 modifier = Modifier.padding(all = 8.dp),
-                text = dog.shortDescription,
+                text = dog.description ?: "No description given, check out the adoption site anyway?",
                 style = MaterialTheme.typography.body1
             )
+            Text("# of photos: ${dog.photos.size}")
         }
 
+        PuppyDetailToolbar(navController, dog, favorites)
+    }
+}
+
+@Composable
+private fun PuppyDetailToolbar(
+    navController: NavHostController,
+    dog: AnimalDTO,
+    favorites: MutableState<Set<String>>
+) {
+    Column {
+        val color = Color.Black.copy(alpha = 0.3f)
+        Spacer(
+            Modifier
+                .background(color)
+                .statusBarsPadding() // Match the height of the status bar
+                .fillMaxWidth()
+        )
         TopAppBar(
             title = {},
             navigationIcon = {
@@ -110,12 +131,17 @@ fun DetailcreenDarkPreview() {
                 }
             },
             actions = {
-                IconButton(onClick = { isFavorite = !isFavorite }) {
-                    val icon = if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder
-                    Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Toggle favorite")
+                IconButton(
+                    onClick = {
+                        val isFavorite = dog.id in favorites.value
+                        favorites.value = if (isFavorite) favorites.value - dog.id else favorites.value + dog.id
+                    }
+                ) {
+                    val icon = if (dog.id in favorites.value) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder
+                    Icon(imageVector = icon, contentDescription = "Toggle favorite")
                 }
             },
-            backgroundColor = Color.Black.copy(alpha = 0.2f),
+            backgroundColor = color,
             contentColor = Color.White,
             elevation = 0.dp
         )
@@ -123,8 +149,8 @@ fun DetailcreenDarkPreview() {
 }
 
 @Composable
-private fun HeaderInfo(dog: Dog) {
-    Surface(color = MaterialTheme.colors.primary) {
+private fun HeaderInfo(dog: AnimalDTO) {
+    Surface(color = MaterialTheme.colors.primarySurface, elevation = 2.dp) {
         Column(
             Modifier
                 .fillMaxWidth()
@@ -138,17 +164,22 @@ private fun HeaderInfo(dog: Dog) {
 }
 
 @Composable
-private fun HeaderImage(dog: Dog) {
-    CoilImage(
-        data = dog.pictureUrl,
-        contentDescription = "Header image of ${dog.name}",
+private fun HeaderImage(dog: AnimalDTO) {
+    val image = dog.photos.firstOrNull()
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(200.dp),
-        loading = {
-            Box(modifier = Modifier.background(MaterialTheme.colors.onSurface.copy(alpha = 0.2f)))
-        },
-        contentScale = ContentScale.Crop,
-        alignment = Alignment.TopCenter
-    )
+            .height(300.dp)
+            .background(MaterialTheme.colors.onSurface.copy(alpha = 0.2f))
+    ) {
+        if (image != null) {
+            CoilImage(
+                modifier = Modifier.matchParentSize(),
+                data = image.large,
+                contentDescription = "Header image of ${dog.name}",
+                contentScale = ContentScale.Crop,
+                alignment = Alignment.TopCenter
+            )
+        }
+    }
 }

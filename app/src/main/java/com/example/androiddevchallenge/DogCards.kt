@@ -26,10 +26,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
@@ -41,6 +44,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.transform.CircleCropTransformation
+import com.example.androiddevchallenge.network.AnimalDTO
 import com.example.androiddevchallenge.ui.theme.MyTheme
 import dev.chrisbanes.accompanist.coil.CoilImage
 
@@ -77,25 +81,39 @@ fun LightCard3() {
 }
 
 @Composable
-fun DogCardRound(dog: Dog, isFavorite: Boolean, modifier: Modifier = Modifier, onFavoriteClicked: (Dog) -> Unit) {
+fun DogCardRound(
+    dog: AnimalDTO,
+    isFavorite: Boolean,
+    modifier: Modifier = Modifier,
+    onFavoriteClicked: (AnimalDTO) -> Unit
+) {
     Card(modifier = modifier, elevation = 2.dp) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(8.dp)
         ) {
-            CoilImage(
-                modifier = Modifier.size(64.dp),
-                data = dog.pictureUrl,
-                fadeIn = true,
-                contentDescription = "A picture of ${dog.name}",
-                requestBuilder = {
-                    transformations(CircleCropTransformation())
-                },
-                loading = {
-                    Box(modifier = Modifier.background(MaterialTheme.colors.onSurface.copy(alpha = 0.2f)))
+            Box(Modifier.size(64.dp)) {
+                val image = dog.photos.firstOrNull()
+                if (image != null) {
+                    CoilImage(
+                        modifier = Modifier.matchParentSize(),
+                        data = image.small,
+                        fadeIn = true,
+                        contentDescription = "A picture of ${dog.name}",
+                        requestBuilder = {
+                            transformations(CircleCropTransformation())
+                        },
+                    )
+                } else {
+                    Surface(
+                        modifier = Modifier.matchParentSize(),
+                        shape = RoundedCornerShape(CornerSize(percent = 50)),
+                        color = MaterialTheme.colors.onSurface.copy(alpha = 0.2f)
+                    ) {}
                 }
-            )
+            }
+
             TextContentContent(
                 dog,
                 isFavorite,
@@ -107,12 +125,17 @@ fun DogCardRound(dog: Dog, isFavorite: Boolean, modifier: Modifier = Modifier, o
 }
 
 @Composable
-fun DogCardSquare(dog: Dog, isFavorite: Boolean, modifier: Modifier = Modifier, onFavoriteClicked: (Dog) -> Unit) {
+fun DogCardSquare(
+    dog: AnimalDTO,
+    isFavorite: Boolean,
+    modifier: Modifier = Modifier,
+    onFavoriteClicked: (AnimalDTO) -> Unit
+) {
     Card(modifier = modifier, elevation = 2.dp) {
         Row(modifier = Modifier.fillMaxWidth()) {
             CoilImage(
                 modifier = Modifier.size(64.dp),
-                data = dog.pictureUrl,
+                data = dog.photos.first().small,
                 fadeIn = true,
                 contentDescription = "A picture of ${dog.name}",
                 contentScale = ContentScale.Crop,
@@ -131,7 +154,12 @@ fun DogCardSquare(dog: Dog, isFavorite: Boolean, modifier: Modifier = Modifier, 
 }
 
 @Composable
-fun DogCardWrong(dog: Dog, isFavorite: Boolean, modifier: Modifier = Modifier, onFavoriteClicked: (Dog) -> Unit) {
+fun DogCardWrong(
+    dog: AnimalDTO,
+    isFavorite: Boolean,
+    modifier: Modifier = Modifier,
+    onFavoriteClicked: (AnimalDTO) -> Unit
+) {
     Card(modifier = modifier, elevation = 2.dp) {
         Row(modifier = Modifier.height(IntrinsicSize.Min)) {
             Box(
@@ -160,7 +188,12 @@ fun DogCardWrong(dog: Dog, isFavorite: Boolean, modifier: Modifier = Modifier, o
 }
 
 @Composable
-fun TextContentContent(dog: Dog, isFavorite: Boolean, modifier: Modifier = Modifier, onFavoriteClicked: (Dog) -> Unit) {
+fun TextContentContent(
+    dog: AnimalDTO,
+    isFavorite: Boolean,
+    modifier: Modifier = Modifier,
+    onFavoriteClicked: (AnimalDTO) -> Unit
+) {
     Column(modifier.padding(start = 8.dp, bottom = 8.dp)) {
         Row(modifier = Modifier.fillMaxWidth()) {
             Text(
@@ -184,7 +217,7 @@ fun TextContentContent(dog: Dog, isFavorite: Boolean, modifier: Modifier = Modif
 
         Text(
             modifier = Modifier.padding(end = 8.dp),
-            text = dog.shortDescription,
+            text = dog.description ?: "No description given",
             style = MaterialTheme.typography.body1
         )
     }
